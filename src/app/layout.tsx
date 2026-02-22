@@ -10,6 +10,7 @@ export const metadata: Metadata = {
 };
 
 import { Toaster } from "@/components/ui/sonner";
+import DevAdminShortcut from "@/components/dev-admin-shortcut";
 
 export default function RootLayout({
   children,
@@ -21,6 +22,7 @@ export default function RootLayout({
       <body className={inter.className}>
         {children}
         <Toaster position="bottom-right" richColors />
+        <DevAdminShortcut />
       </body>
     </html>
   );
