@@ -1,11 +1,41 @@
-import Link from "next/link";
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { MapPin, AlertCircle, ShieldCheck } from "lucide-react";
+import Link from "next/link";
+
+const ADMIN_EMAIL = "singhrounak@hotmail.com";
 
 export default function Home() {
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) {
+      setError("Please enter your email address.");
+      return;
+    }
+
+    // Store auth state in sessionStorage for the route guard
+    if (email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+      sessionStorage.setItem("civic_role", "admin");
+      sessionStorage.setItem("civic_email", email.toLowerCase());
+      router.push("/admin");
+    } else {
+      sessionStorage.setItem("civic_role", "user");
+      sessionStorage.setItem("civic_email", email.toLowerCase());
+      router.push("/dashboard");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
       {/* Header */}
@@ -17,9 +47,6 @@ export default function Home() {
         <nav className="flex gap-4">
           <Link href="/issues">
             <Button variant="ghost">Browse Issues</Button>
-          </Link>
-          <Link href="/admin">
-            <Button variant="ghost" className="text-slate-500">Admin</Button>
           </Link>
         </nav>
       </header>
@@ -56,7 +83,7 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Login / Signup Card */}
+          {/* Login Card */}
           <Card className="w-full max-w-md mx-auto shadow-xl border-slate-200/60">
             <CardHeader className="space-y-1">
               <CardTitle className="text-2xl font-bold">Welcome back</CardTitle>
@@ -65,19 +92,40 @@ export default function Home() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" placeholder="m@example.com" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input id="password" type="password" />
-              </div>
-              <Link href="/dashboard" className="block w-full pt-2">
-                <Button className="w-full bg-indigo-600 hover:bg-indigo-700">Sign In (Mock)</Button>
-              </Link>
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="m@example.com"
+                    value={email}
+                    onChange={(e) => { setEmail(e.target.value); setError(""); }}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
+                </div>
 
-              <div className="relative my-4">
+                {error && (
+                  <p className="text-sm text-red-500 flex items-center gap-1">
+                    <AlertCircle className="h-4 w-4" />
+                    {error}
+                  </p>
+                )}
+
+                <Button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700 mt-2">
+                  Sign In
+                </Button>
+              </form>
+
+              <div className="relative my-2">
                 <div className="absolute inset-0 flex items-center">
                   <span className="w-full border-t" />
                 </div>
@@ -86,9 +134,17 @@ export default function Home() {
                 </div>
               </div>
 
-              <Link href="/dashboard" className="block w-full">
-                <Button variant="outline" className="w-full">Continue as Guest</Button>
-              </Link>
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => {
+                  sessionStorage.setItem("civic_role", "user");
+                  sessionStorage.setItem("civic_email", "guest");
+                  router.push("/dashboard");
+                }}
+              >
+                Continue as Guest
+              </Button>
             </CardContent>
           </Card>
 
