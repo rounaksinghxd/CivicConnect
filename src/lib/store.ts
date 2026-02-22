@@ -5,7 +5,7 @@ export interface Issue {
     title: string;
     description: string;
     location: string;
-    photoUrl?: string;
+    photoUrl?: string | null;
     status: IssueStatus;
     category: string;
     createdAt: Date;

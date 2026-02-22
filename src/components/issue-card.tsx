@@ -4,19 +4,21 @@ import { Issue } from "@/lib/store";
 import { MapPin, Calendar, Clock, CheckCircle } from "lucide-react";
 
 export function IssueCard({ issue }: { issue: Issue }) {
-    const getStatusColor = (status: Issue["status"]) => {
+    const getStatusColor = (status: string) => {
         switch (status) {
             case "Reported": return "bg-amber-100 text-amber-800 border-amber-200";
             case "In Progress": return "bg-blue-100 text-blue-800 border-blue-200";
             case "Resolved": return "bg-emerald-100 text-emerald-800 border-emerald-200";
+            default: return "bg-slate-100 text-slate-800 border-slate-200";
         }
     };
 
-    const getStatusIcon = (status: Issue["status"]) => {
+    const getStatusIcon = (status: string) => {
         switch (status) {
             case "Reported": return <Clock className="h-4 w-4 mr-1" />;
             case "In Progress": return <Clock className="h-4 w-4 mr-1" />;
             case "Resolved": return <CheckCircle className="h-4 w-4 mr-1" />;
+            default: return null;
         }
     };
 

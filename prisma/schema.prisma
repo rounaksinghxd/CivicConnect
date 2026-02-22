@@ -1,0 +1,22 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider   = "prisma-client-js"
+  engineType = "library"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Issue {
+  id          String   @id @default(uuid())
+  title       String
+  description String
+  location    String
+  category    String
+  photoUrl    String?
+  status      String   @default("Reported")
+  createdAt   DateTime @default(now())
+}

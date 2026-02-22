@@ -10,7 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MapPin, Upload, Camera, ArrowLeft, Image as ImageIcon, X } from "lucide-react";
-import { addIssue, CATEGORIES, Category } from "@/lib/store";
+import { CATEGORIES, Category } from "@/lib/store";
+import { addIssueAction } from "@/app/actions";
 import { MapPickerWrapper } from "@/components/map/map-picker-wrapper";
 
 export default function DashboardPage() {
@@ -31,16 +32,18 @@ export default function DashboardPage() {
         }
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSubmitting(true);
 
-        // Simulate API call
-        setTimeout(() => {
-            addIssue({ title, description, location, category, photoUrl });
-            setIsSubmitting(false);
+        const result = await addIssueAction({ title, description, location, category, photoUrl });
+        setIsSubmitting(false);
+
+        if (result.success) {
             router.push("/issues");
-        }, 800);
+        } else {
+            alert("Failed to submit issue. Please try again.");
+        }
     };
 
     return (

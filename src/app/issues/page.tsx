@@ -1,27 +1,14 @@
-"use client";
-
-import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { IssueCard } from "@/components/issue-card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { getIssues, CATEGORIES } from "@/lib/store";
-import { MapPin, Search, PlusCircle, ArrowLeft, LayoutGrid, Map as MapIcon } from "lucide-react";
+import { getIssues } from "@/app/actions";
+import { MapPin, PlusCircle, ArrowLeft, Search } from "lucide-react";
 
-export default function IssuesPage() {
-    const [issues] = useState(getIssues());
-    const [search, setSearch] = useState("");
-    const [categoryFilter, setCategoryFilter] = useState<string>("all");
-    const [view, setView] = useState<"list" | "map">("list");
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
-    const filteredIssues = issues.filter(issue => {
-        const matchesSearch = issue.title.toLowerCase().includes(search.toLowerCase()) ||
-            issue.description.toLowerCase().includes(search.toLowerCase()) ||
-            issue.location.toLowerCase().includes(search.toLowerCase());
-        const matchesCategory = categoryFilter === "all" || issue.category === categoryFilter;
-        return matchesSearch && matchesCategory;
-    });
+export default async function IssuesPage() {
+    const issues = await getIssues();
 
     return (
         <div className="min-h-screen bg-slate-50 flex flex-col">
@@ -50,84 +37,22 @@ export default function IssuesPage() {
                         <h1 className="text-3xl font-bold text-slate-900">Recent Reports</h1>
                         <p className="text-slate-500">View and track civic issues in your neighborhood.</p>
                     </div>
-
-                    <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-                        <div className="relative w-full sm:w-64">
-                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
-                            <Input
-                                placeholder="Search issues..."
-                                className="pl-9"
-                                value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                            />
-                        </div>
-
-                        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                            <SelectTrigger className="w-full sm:w-[140px]">
-                                <SelectValue placeholder="Category" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All Categories</SelectItem>
-                                {CATEGORIES.map(c => (
-                                    <SelectItem key={c} value={c}>{c}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-
-                        <div className="flex rounded-md border border-slate-200 p-1 bg-white">
-                            <Button
-                                variant={view === "list" ? "secondary" : "ghost"}
-                                size="sm"
-                                className="w-10 px-0 h-8"
-                                onClick={() => setView("list")}
-                            >
-                                <LayoutGrid className="h-4 w-4" />
-                            </Button>
-                            <Button
-                                variant={view === "map" ? "secondary" : "ghost"}
-                                size="sm"
-                                className="w-10 px-0 h-8"
-                                onClick={() => setView("map")}
-                            >
-                                <MapIcon className="h-4 w-4" />
-                            </Button>
-                        </div>
-                    </div>
                 </div>
 
                 {/* Content Area */}
-                {view === "list" ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 overflow-y-auto pb-12">
-                        {filteredIssues.length > 0 ? (
-                            filteredIssues.map(issue => (
-                                <IssueCard key={issue.id} issue={issue} />
-                            ))
-                        ) : (
-                            <div className="col-span-full py-20 text-center flex flex-col items-center">
-                                <Search className="h-12 w-12 text-slate-300 mb-4" />
-                                <h3 className="text-lg font-medium text-slate-900">No issues found</h3>
-                                <p className="text-slate-500">Try adjusting your filters or search terms.</p>
-                            </div>
-                        )}
-                    </div>
-                ) : (
-                    <div className="flex-1 bg-slate-200 border border-slate-300 rounded-xl overflow-hidden relative flex items-center justify-center">
-                        {/* Mock Map View */}
-                        <div className="absolute inset-0 opacity-30 pointer-events-none" style={{
-                            backgroundImage: 'radial-gradient(circle at 2px 2px, slate-400 1px, transparent 0)',
-                            backgroundSize: '32px 32px'
-                        }} />
-
-                        <div className="z-10 bg-white/90 backdrop-blur p-6 rounded-xl shadow-xl border border-slate-200 max-w-sm text-center">
-                            <MapIcon className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-                            <h3 className="text-xl font-bold text-slate-800 mb-2">Interactive Map Area</h3>
-                            <p className="text-sm text-slate-500 mb-4">
-                                In a full application, this would integrate with Google Maps or Mapbox to display pins for all filtered issues ({filteredIssues.length} currently).
-                            </p>
-                            <Button variant="outline" onClick={() => setView("list")}>Back to List View</Button>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 overflow-y-auto pb-12">
+                    {issues.length > 0 ? (
+                        issues.map(issue => (
+                            <IssueCard key={issue.id} issue={issue} />
+                        ))
+                    ) : (
+                        <div className="col-span-full py-20 text-center flex flex-col items-center">
+                            <Search className="h-12 w-12 text-slate-300 mb-4" />
+                            <h3 className="text-lg font-medium text-slate-900">No issues found</h3>
+                            <p className="text-slate-500">There are no reported issues yet.</p>
                         </div>
-                    </div>
-                )}
+                    )}
+                </div>
 
             </main>
         </div>
