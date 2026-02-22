@@ -1,20 +1,24 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect, useRef } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { IssueStatus, CATEGORIES } from "@/lib/store";
-import { updateIssueStatusAction } from "@/app/actions";
+import { updateIssueStatusAction, getIssues } from "@/app/actions";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { MapPin, Search, ArrowLeft, MoreHorizontal, CheckCircle, Clock, AlertTriangle, Loader2 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { toast } from "sonner";
 
 interface AdminClientProps {
     initialIssues: any[]; // Prisma issue
 }
+
+// Subtle notification sound (Data URL)
+const NOTIFICATION_SOUND = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA="; // Short click/ding
 
 export default function AdminClient({ initialIssues }: AdminClientProps) {
     const [issues, setIssues] = useState(initialIssues);
@@ -22,6 +26,59 @@ export default function AdminClient({ initialIssues }: AdminClientProps) {
     const [categoryFilter, setCategoryFilter] = useState<string>("all");
     const [statusFilter, setStatusFilter] = useState<string>("all");
     const [isPending, startTransition] = useTransition();
+
+    // Store latest IDs to detect exclusively new issues during polling
+    const knownIssueIds = useRef<Set<string>>(new Set(initialIssues.map(i => i.id)));
+
+    useEffect(() => {
+        // Poll every 10 seconds checking for new issues
+        const pollInterval = setInterval(async () => {
+            try {
+                const latestIssues = await getIssues();
+                if (!latestIssues || latestIssues.length === 0) return;
+
+                const newIssues = latestIssues.filter(issue => !knownIssueIds.current.has(issue.id));
+
+                if (newIssues.length > 0) {
+                    // Play sound
+                    const audio = new Audio(NOTIFICATION_SOUND);
+                    audio.volume = 0.5;
+                    audio.play().catch(e => console.error("Audio playback failed:", e));
+
+                    // Add new IDs to known set
+                    newIssues.forEach(issue => knownIssueIds.current.add(issue.id));
+
+                    // Show toasts
+                    newIssues.forEach(issue => {
+                        toast(`New Issue Reported: ${issue.title}`, {
+                            description: `${issue.location} - ${new Date(issue.createdAt).toLocaleTimeString()}`,
+                            action: {
+                                label: "View",
+                                onClick: () => {
+                                    setSearch(issue.id); // Fast filter to find it
+                                    // Optional: If rows have IDs, scroll to it: document.getElementById(`row-${issue.id}`)?.scrollIntoView({ behavior: 'smooth' });
+                                }
+                            }
+                        });
+                    });
+
+                    // Safely update state without losing local optimistic updates
+                    setIssues(prevIssues => {
+                        // Create a map of current issues for easy merging
+                        const issueMap = new Map(prevIssues.map(i => [i.id, i]));
+                        // Update with latest DB values (this also brings in the new ones)
+                        latestIssues.forEach(i => issueMap.set(i.id, i));
+                        // Sort them by createdAt desc to match expected UI order
+                        return Array.from(issueMap.values()).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+                    });
+                }
+            } catch (error) {
+                console.error("Failed to poll issues:", error);
+            }
+        }, 10000);
+
+        return () => clearInterval(pollInterval);
+    }, []);
 
     const filteredIssues = issues.filter(issue => {
         const matchesSearch = issue.title.toLowerCase().includes(search.toLowerCase()) ||
