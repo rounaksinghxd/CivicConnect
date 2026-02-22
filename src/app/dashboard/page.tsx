@@ -9,8 +9,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MapPin, Upload, Camera, ArrowLeft } from "lucide-react";
+import { MapPin, Upload, Camera, ArrowLeft, Image as ImageIcon, X } from "lucide-react";
 import { addIssue, CATEGORIES, Category } from "@/lib/store";
+import { MapPickerWrapper } from "@/components/map/map-picker-wrapper";
 
 export default function DashboardPage() {
     const router = useRouter();
@@ -19,6 +20,16 @@ export default function DashboardPage() {
     const [location, setLocation] = useState("");
     const [category, setCategory] = useState<Category>("Other");
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [photoUrl, setPhotoUrl] = useState<string | undefined>(undefined);
+    const [showMap, setShowMap] = useState(false);
+
+    const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            const url = URL.createObjectURL(file);
+            setPhotoUrl(url);
+        }
+    };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -26,7 +37,7 @@ export default function DashboardPage() {
 
         // Simulate API call
         setTimeout(() => {
-            addIssue({ title, description, location, category });
+            addIssue({ title, description, location, category, photoUrl });
             setIsSubmitting(false);
             router.push("/issues");
         }, 800);
@@ -110,24 +121,61 @@ export default function DashboardPage() {
                                             value={location}
                                             onChange={(e) => setLocation(e.target.value)}
                                         />
-                                        <Button type="button" variant="outline" className="shrink-0 gap-2">
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            className="shrink-0 gap-2"
+                                            onClick={() => setShowMap(!showMap)}
+                                        >
                                             <MapPin className="h-4 w-4" />
-                                            <span className="hidden sm:inline">Use Location</span>
+                                            <span className="hidden sm:inline">{showMap ? "Hide Map" : "Pick on Map"}</span>
                                         </Button>
                                     </div>
+                                    {showMap && (
+                                        <div className="mt-4">
+                                            <MapPickerWrapper
+                                                onLocationSelect={(addr) => {
+                                                    setLocation(addr);
+                                                    setShowMap(false);
+                                                }}
+                                            />
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div className="space-y-2">
-                                    <Label>Photo (Mock)</Label>
-                                    <div className="border-2 border-dashed border-slate-300 rounded-lg p-8 flex flex-col items-center justify-center gap-4 bg-slate-50 hover:bg-slate-100 transition-colors cursor-pointer">
-                                        <div className="h-12 w-12 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600">
-                                            <Camera className="h-6 w-6" />
+                                    <Label>Photo</Label>
+                                    {photoUrl ? (
+                                        <div className="relative rounded-lg overflow-hidden border border-slate-200">
+                                            <img src={photoUrl} alt="Selected" className="w-full h-48 object-cover" />
+                                            <Button
+                                                type="button"
+                                                variant="destructive"
+                                                size="icon"
+                                                className="absolute top-2 right-2 h-8 w-8 rounded-full"
+                                                onClick={() => setPhotoUrl(undefined)}
+                                            >
+                                                <X className="h-4 w-4" />
+                                            </Button>
                                         </div>
-                                        <div className="text-center">
-                                            <p className="text-sm font-medium text-slate-700">Click to upload or drag and drop</p>
-                                            <p className="text-xs text-slate-500 mt-1">SVG, PNG, JPG or GIF (max. 5MB)</p>
-                                        </div>
-                                    </div>
+                                    ) : (
+                                        <label htmlFor="photo-upload" className="border-2 border-dashed border-slate-300 rounded-lg p-8 flex flex-col items-center justify-center gap-4 bg-slate-50 hover:bg-slate-100 transition-colors cursor-pointer">
+                                            <div className="h-12 w-12 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600">
+                                                <ImageIcon className="h-6 w-6" />
+                                            </div>
+                                            <div className="text-center">
+                                                <p className="text-sm font-medium text-slate-700">Click to upload an image</p>
+                                                <p className="text-xs text-slate-500 mt-1">PNG, JPG or GIF</p>
+                                            </div>
+                                            <input
+                                                id="photo-upload"
+                                                type="file"
+                                                accept="image/*"
+                                                className="hidden"
+                                                onChange={handlePhotoChange}
+                                            />
+                                        </label>
+                                    )}
                                 </div>
 
                                 <div className="pt-4 flex justify-end gap-4">
